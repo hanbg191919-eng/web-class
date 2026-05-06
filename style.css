@@ -1,7 +1,7 @@
-@import url('https://fonts.googleapis.com/css2?family=Diphylleia&family=Noto+Sans+KR:wght@100..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dongle&family=Noto+Sans+KR:wght@100..900&display=swap&#39;);
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
-ul, li { list-style: none;}
+ul, li { list-style: none; }
 a { text-decoration: none; color: #000; }
 
 body {
@@ -22,9 +22,7 @@ body {
 }
 #header ul {
     display: flex;
-    max-width: 1000px;
-    margin: 0 auto;
-    justify-content: conter;
+    justify-content: center;
     gap: 20px;
 }
 #header li a {
@@ -57,7 +55,7 @@ body {
     box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 .profile h1 {
-    font-family: "Diphylleia", serif;
+    font-family: "Dongle", sans-serif;
     font-size: 32px;
     color: #2a80ff;
     margin-bottom: 10px;
@@ -96,7 +94,7 @@ body {
     background-color: #fff;
     padding: 15px;
     border-radius: 10px;
-    box-shadow: 0 0 8px rgb(0, 0, 0, 0.1);
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 .notice table {
     width: 100%;
@@ -121,6 +119,7 @@ body {
     padding: 15px;
     background-color: #fffbe7;
     border-radius: 10px;
+    border: 1px solid #ccc;
     max-height: 150px;
     overflow: auto;
 }
@@ -133,12 +132,12 @@ footer {
     position: fixed;
     width: 100%;
     left: 0;
-    bottom: 0s;
+    bottom: 0;
     padding: 15px;
     background-color: #222;
     color: #fff;
     text-align: center;
 }
 address {
-    font-style: normal;    
+    font-style: normal;
 }

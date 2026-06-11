@@ -5,6 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>홍길순의 미니홈피</title>
     <link rel="stylesheet" href="style.css">
+
+    <!-- ▼ 추가/수정: 검정·파랑 통일 + 급식(칼로리/알레르기/영양) 전용 스타일 -->
+    <style>
+        :root {
+            --navy: #1a237e;     /* 메인 파랑 */
+            --blue: #0d47a1;     /* 보조 파랑 */
+            --ink:  #1a1a1a;     /* 검정 */
+            --line: #d7ddf0;     /* 옅은 파랑 라인 */
+            --soft: #eef1fa;     /* 옅은 파랑 배경 */
+        }
+
+        /* 실시간 시계 */
+        #liveClock {
+            text-align: center;
+            font-family: "Noto Sans KR", sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: var(--ink);
+            background: var(--soft);
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 10px 16px;
+            margin: 16px auto;
+            max-width: 440px;
+        }
+        #liveClock .time { color: var(--ink); }   /* 시간 색 검정 통일 */
+
+        /* 급식 박스 */
+        .meal-box {
+            font-family: "Noto Sans KR", sans-serif;
+            color: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            padding: 18px 20px;
+            margin: 16px 0;
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(26,35,126,0.08);
+        }
+        .meal-box h3 {
+            margin: 0 0 12px;
+            font-size: 1.15rem;
+            color: var(--navy);
+            border-bottom: 2px solid var(--navy);
+            padding-bottom: 6px;
+        }
+        .meal-box .meal-date { font-size: 0.85rem; color: #6b7280; font-weight: 400; }
+
+        .meal-type { margin-bottom: 16px; }
+        .meal-head {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .meal-head strong {
+            background: var(--navy); color: #fff; font-size: 0.8rem;
+            padding: 3px 12px; border-radius: 20px;
+        }
+        .meal-head .cal {
+            font-size: 0.85rem; font-weight: 700; color: var(--blue);
+        }
+        .meal-type ul { margin: 4px 0 0; padding-left: 18px; }
+        .meal-type li { line-height: 1.85; }
+
+        /* 알레르기 번호 칩 */
+        .allergen {
+            font-size: 0.68rem; font-weight: 700;
+            color: var(--navy); background: var(--soft);
+            border: 1px solid var(--line);
+            border-radius: 6px; padding: 0 5px; margin-left: 3px;
+            vertical-align: 1px;
+        }
+        /* 알레르기 범례 */
+        .allergen-legend {
+            margin-top: 10px; padding-top: 10px;
+            border-top: 1px dashed var(--line);
+            font-size: 0.78rem; color: #374151; line-height: 1.9;
+        }
+        .allergen-legend .label { color: var(--navy); font-weight: 700; }
+        .allergen-legend .leg {
+            display: inline-block; margin-right: 8px; white-space: nowrap;
+        }
+        .allergen-legend .leg b { color: var(--navy); }
+
+        /* 영양정보 토글 */
+        details.ntr { margin-top: 6px; }
+        details.ntr summary {
+            cursor: pointer; font-size: 0.8rem; color: var(--blue);
+            list-style: none; user-select: none;
+        }
+        details.ntr summary::before { content: "▸ "; }
+        details.ntr[open] summary::before { content: "▾ "; }
+        details.ntr .ntr-body {
+            margin-top: 6px; padding: 8px 12px;
+            background: var(--soft); border-radius: 8px;
+            font-size: 0.8rem; color: var(--ink); line-height: 1.8;
+        }
+        .meal-box .empty { color: #6b7280; }
+    </style>
 </head>
 <body>
     <!-- 고정 메뉴 -->
@@ -16,6 +114,9 @@
             <li><a href="#">CONTACT</a></li>
         </ul>
     </header>
+
+    <!-- 1초마다 갱신되는 실시간 시계 -->
+    <div id="liveClock">시간을 불러오는 중...</div>
 
     <!-- 메인 영역 -->
     <div id="container">
@@ -33,6 +134,12 @@
                 <li>📍 위치: 서울시 성동구</li>
                 <li>💡 관심 분야: 디자인, HTML, CSS, JavaScript</li>
             </ul>
+
+            <!-- 오늘의 급식 (성일정보고등학교) -->
+            <div class="meal-box">
+                <h3>🍱 오늘의 급식 <span class="meal-date" id="mealDate"></span></h3>
+                <div id="mealContent"><p class="empty">급식 정보를 불러오는 중...</p></div>
+            </div>
         </div>
 
         <!-- 공지사항 + 본문 -->
@@ -77,5 +184,140 @@
     <footer id="footer">
         <address>&copy; 2026 성일정보고. All rights reserved.</address>
     </footer>
+
+    <!-- 시계 + 급식 스크립트 -->
+    <script>
+        /* ===== 1) 1초마다 갱신되는 실시간 시계 ===== */
+        function updateClock() {
+            const now = new Date();
+            const days = ['일', '월', '화', '수', '목', '금', '토'];
+            const dateStr =
+                now.getFullYear() + '년 ' +
+                (now.getMonth() + 1) + '월 ' +
+                now.getDate() + '일 (' + days[now.getDay()] + ')';
+            const timeStr = now.toLocaleTimeString('ko-KR', { hour12: true });
+            document.getElementById('liveClock').innerHTML =
+                dateStr + ' &nbsp; <span class="time">' + timeStr + '</span>';
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        /* ===== 2) 오늘의 급식 (NEIS 교육정보 개방 포털) ===== */
+        const SCHOOL_NAME = '성일정보고등학교';
+
+        // 식약처 알레르기 유발물질 19종
+        const ALLERGEN = {
+            '1':'난류','2':'우유','3':'메밀','4':'땅콩','5':'대두','6':'밀','7':'고등어',
+            '8':'게','9':'새우','10':'돼지고기','11':'복숭아','12':'토마토','13':'아황산류',
+            '14':'호두','15':'닭고기','16':'쇠고기','17':'오징어','18':'조개류','19':'잣'
+        };
+
+        function ymdToday() {
+            const d = new Date();
+            return d.getFullYear() +
+                String(d.getMonth() + 1).padStart(2, '0') +
+                String(d.getDate()).padStart(2, '0');
+        }
+
+        // "기장밥 (5.6)" -> { name:'기장밥', codes:['5','6'] }
+        function parseMenu(raw) {
+            return raw.split(/<br\s*\/?>/i).map(item => {
+                const codes = [];
+                const m = item.match(/\(([0-9.\s]+)\)/);
+                if (m) m[1].split('.').forEach(c => { c = c.trim(); if (c) codes.push(c); });
+                const name = item.replace(/\s*\([0-9.\s]+\)\s*/g, '').trim();
+                return { name, codes };
+            }).filter(x => x.name);
+        }
+
+        // 영양정보 문자열 -> 줄 배열
+        function parseNtr(raw) {
+            if (!raw) return [];
+            return raw.split(/<br\s*\/?>/i).map(s => s.trim()).filter(Boolean);
+        }
+
+        async function loadMeal() {
+            const mealEl = document.getElementById('mealContent');
+            const dateEl = document.getElementById('mealDate');
+            const ymd = ymdToday();
+            dateEl.textContent =
+                '(' + ymd.slice(0, 4) + '.' + ymd.slice(4, 6) + '.' + ymd.slice(6, 8) + ')';
+
+            try {
+                // (1) 학교코드 조회
+                const infoUrl =
+                    'https://open.neis.go.kr/hub/schoolInfo?Type=json&pSize=1&SCHUL_NM=' +
+                    encodeURIComponent(SCHOOL_NAME);
+                const infoJson = await (await fetch(infoUrl)).json();
+                const school = infoJson.schoolInfo[1].row[0];
+                const atptCode = school.ATPT_OFCDC_SC_CODE;
+                const schulCode = school.SD_SCHUL_CODE;
+
+                // (2) 급식 조회
+                const mealUrl =
+                    'https://open.neis.go.kr/hub/mealServiceDietInfo?Type=json' +
+                    '&ATPT_OFCDC_SC_CODE=' + atptCode +
+                    '&SD_SCHUL_CODE=' + schulCode +
+                    '&MLSV_YMD=' + ymd;
+                const mealJson = await (await fetch(mealUrl)).json();
+
+                if (!mealJson.mealServiceDietInfo) {
+                    mealEl.innerHTML =
+                        '<p class="empty">오늘은 급식 정보가 없습니다. (주말·공휴일 등)</p>';
+                    return;
+                }
+
+                const rows = mealJson.mealServiceDietInfo[1].row;
+                const usedCodes = new Set();
+
+                const html = rows.map(row => {
+                    const items = parseMenu(row.DDISH_NM);
+                    items.forEach(it => it.codes.forEach(c => usedCodes.add(c)));
+
+                    const lis = items.map(it => {
+                        const chips = it.codes
+                            .map(c => '<sup class="allergen" title="' +
+                                (ALLERGEN[c] || '') + '">' + c + '</sup>')
+                            .join('');
+                        return '<li>' + it.name + chips + '</li>';
+                    }).join('');
+
+                    const cal = row.CAL_INFO
+                        ? '<span class="cal">🔥 ' + row.CAL_INFO + '</span>' : '';
+
+                    const ntrLines = parseNtr(row.NTR_INFO);
+                    const ntr = ntrLines.length
+                        ? '<details class="ntr"><summary>영양정보 보기</summary>' +
+                          '<div class="ntr-body">' + ntrLines.join('<br>') + '</div></details>'
+                        : '';
+
+                    return '<div class="meal-type">' +
+                        '<div class="meal-head"><strong>' + row.MMEAL_SC_NM + '</strong>' +
+                        cal + '</div>' +
+                        '<ul>' + lis + '</ul>' + ntr + '</div>';
+                }).join('');
+
+                // 알레르기 범례(오늘 메뉴에 등장한 것만)
+                let legend = '';
+                if (usedCodes.size) {
+                    const items = [...usedCodes]
+                        .sort((a, b) => Number(a) - Number(b))
+                        .map(c => '<span class="leg"><b>' + c + '</b> ' +
+                            (ALLERGEN[c] || '') + '</span>')
+                        .join('');
+                    legend = '<div class="allergen-legend">' +
+                        '<span class="label">⚠ 알레르기 유발 식품</span><br>' + items + '</div>';
+                }
+
+                mealEl.innerHTML = html + legend;
+
+            } catch (err) {
+                mealEl.innerHTML =
+                    '<p class="empty">급식 정보를 불러오지 못했습니다.</p>';
+                console.error('급식 로딩 오류:', err);
+            }
+        }
+        loadMeal();
+    </script>
 </body>
 </html>

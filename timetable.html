@@ -4,151 +4,313 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>나만의 시간표 ver1.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         :root {
-            /* 기본 테마 변수 */
-            --bg-color: #fcfaf3; --text-color: #4a4a4a; --header-bg: #d1d8e0;
-            --btn-bg: #d1d8e0; --panel-bg: #ffffff; --cell-border: #e0e0e0;
-            /* 과목별 테마 색상 */
-            --sub-1: #e3f2fd; --sub-2: #fce4ec; --sub-3: #fff3e0; --sub-4: #e8f5e9;
+            --bg:    #fafafa;
+            --panel: #ffffff;
+            --ink:   #111111;   /* 검정 통일 */
+            --gray:  #6b7280;
+            --line:  #e5e7eb;
+            --fill:  #f3f4f6;   /* 과목 채워진 셀 */
+        }
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Noto Sans KR", -apple-system, sans-serif;
+            background: var(--bg); color: var(--ink);
+            margin: 0; padding: 32px 16px 48px;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        body { font-family: 'Pretendard', sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; padding: 20px; transition: 0.3s; }
-        .dday-box { margin-bottom: 10px; font-weight: bold; cursor: pointer; padding: 5px 10px; background: var(--panel-bg); border-radius: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .controls { margin-bottom: 15px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-        button, .theme-select { padding: 8px 12px; cursor: pointer; border: none; border-radius: 5px; background-color: var(--btn-bg); font-size: 0.85rem; color: var(--text-color); transition: 0.3s; }
-        button:hover { filter: brightness(0.9); }
-        
-        .timetable { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; width: 100%; max-width: 800px; padding: 10px; background: var(--panel-bg); border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .cell { background-color: var(--panel-bg); border: 1px solid var(--cell-border); border-radius: 8px; display: flex; align-items: center; justify-content: center; aspect-ratio: 1 / 1; padding: 4px; overflow: hidden; }
-        .header { background-color: var(--header-bg); font-weight: bold; }
-        
-        select { width: 100%; height: 100%; border: none; background: transparent; text-align: center; font-size: 0.85rem; color: var(--text-color); cursor: pointer; -webkit-appearance: none; appearance: none; }
-        select:disabled { cursor: default; opacity: 1; color: var(--text-color); }
-        .today-highlight { border: 2px solid #fbc02d !important; }
+        /* 상단 바: 뒤로가기 + D-Day */
+        .topbar {
+            width: 100%; max-width: 860px;
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px;
+        }
+        .back-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 18px; border-radius: 999px;
+            background: var(--ink); color: #fff;
+            font-size: 0.85rem; font-weight: 700;
+            border: none; cursor: pointer; text-decoration: none;
+            transition: opacity 0.15s;
+        }
+        .back-btn:hover { opacity: 0.75; }
+        .dday-box {
+            padding: 9px 18px; border-radius: 999px;
+            background: var(--panel); border: 1px solid var(--line);
+            font-size: 0.85rem; font-weight: 700; cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .dday-box:hover { border-color: var(--ink); }
+
+        /* 타이틀 */
+        .title { text-align: center; margin-bottom: 4px; }
+        .title h2 { margin: 0; font-size: 1.7rem; font-weight: 900; letter-spacing: -0.5px; }
+        .title .sub { color: var(--gray); font-size: 0.85rem; margin-top: 4px; }
+        #ttStatus { font-size: 0.8rem; color: var(--gray); margin: 10px 0 18px; min-height: 1.2em; text-align: center; }
+
+        /* 시간표 카드 */
+        .timetable {
+            display: grid; grid-template-columns: 56px repeat(5, 1fr); gap: 8px;
+            width: 100%; max-width: 860px;
+            background: var(--panel); border: 1px solid var(--line);
+            border-radius: 20px; padding: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+        .cell {
+            min-height: 64px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--line); background: var(--panel);
+            transition: background 0.15s, border-color 0.15s;
+            overflow: hidden;
+        }
+        .cell:not(.header):hover { border-color: var(--ink); }
+        .header {
+            background: var(--ink); color: #fff;
+            font-weight: 700; font-size: 0.85rem; border: none;
+        }
+        .header.perio { background: var(--fill); color: var(--ink); border: none; }
+        .today-highlight { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+        select {
+            width: 100%; height: 100%; border: none; background: transparent;
+            text-align: center; font-family: inherit; font-size: 0.85rem;
+            color: var(--ink); cursor: pointer;
+            -webkit-appearance: none; appearance: none;
+        }
+
+        /* 하단 액션 버튼 */
+        .controls {
+            margin-top: 18px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+        }
+        .controls button {
+            padding: 9px 18px; border-radius: 999px;
+            border: 1px solid var(--line); background: var(--panel);
+            color: var(--ink); font-family: inherit; font-size: 0.85rem; font-weight: 500;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .controls button:hover { border-color: var(--ink); background: var(--fill); }
+
+        @media (max-width: 640px) {
+            .timetable { grid-template-columns: 44px repeat(5, 1fr); gap: 5px; padding: 12px; }
+            .cell { min-height: 52px; border-radius: 10px; }
+            select, .header { font-size: 0.72rem; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="dday-box" id="dday-display" onclick="setDDay()">시험 D-Day 설정하기</div>
-
-    <h2>나만의 시간표 ver1.0</h2>
-    <div class="controls">
-        <select id="themeSelect" class="theme-select" onchange="changeTheme()">
-            <option value="warm">아이보리</option><option value="dark">다크</option>
-            <option value="ocean">오션</option><option value="forest">포레스트</option>
-        </select>
-        <button id="modeBtn" onclick="toggleMode()">보기 모드 전환</button>
-        <button onclick="downloadImage()">저장</button>
-        <button onclick="shareLink()" style="background-color: #81ecec;">링크 공유</button>
-        <button onclick="resetTimetable()" style="background-color: #fab1a0;">초기화</button>
+    <div class="topbar">
+        <a class="back-btn" href="index.html">← 미니홈피로</a>
+        <div class="dday-box" id="dday-display" onclick="setDDay()">시험 D-Day 설정</div>
     </div>
 
+    <div class="title">
+        <h2>나만의 시간표 <span style="font-weight:400;">ver1.0</span></h2>
+        <div class="sub">성일정보고등학교 · 2학년 11반</div>
+    </div>
+    <div id="ttStatus"></div>
+
     <div class="timetable" id="timetable">
-        <div class="cell header">교시</div>
+        <div class="cell header perio"></div>
         <div class="cell header" id="head-월">월</div><div class="cell header" id="head-화">화</div>
         <div class="cell header" id="head-수">수</div><div class="cell header" id="head-목">목</div>
         <div class="cell header" id="head-금">금</div>
     </div>
 
+    <div class="controls">
+        <button onclick="downloadImage()">이미지 저장</button>
+        <button onclick="shareLink()">링크 공유</button>
+        <button onclick="resetTimetable()">초기화</button>
+    </div>
+
     <script>
-        const themes = {
-            "warm": { bg: "#fcfaf3", text: "#4a4a4a", header: "#d1d8e0", panel: "#ffffff", sub: ["#e3f2fd", "#fce4ec", "#fff3e0", "#e8f5e9", "#f3e5f5", "#fffde7"] },
-            "dark": { bg: "#2d3436", text: "#dfe6e9", header: "#4a5568", panel: "#353b48", sub: ["#2c3e50", "#7f8c8d", "#34495e", "#27ae60", "#8e44ad", "#f39c12"] },
-            "ocean": { bg: "#e1f5fe", text: "#0277bd", header: "#b3e5fc", panel: "#ffffff", sub: ["#b3e5fc", "#81d4fa", "#4fc3f7", "#29b6f6", "#03a9f4", "#0288d1"] },
-            "forest": { bg: "#e8f5e9", text: "#2e7d32", header: "#c8e6c9", panel: "#ffffff", sub: ["#c8e6c9", "#a5d6a7", "#81c784", "#66bb6a", "#4caf50", "#388e3c"] }
-        };
+        /* ===== 설정 (반 변경 시 여기만 수정) ===== */
+        const SCHOOL_NAME = '성일정보고등학교';
+        const AY = '2026';     // 학년도
+        const SEM = '1';       // 학기
+        const GRADE = '2';     // 학년
+        const CLASS_NM = '11'; // 반
 
-        let isEditMode = true;
-
-        function changeTheme() {
-            const themeName = document.getElementById("themeSelect").value;
-            const theme = themes[themeName];
-            const root = document.documentElement;
-            root.style.setProperty('--bg-color', theme.bg);
-            root.style.setProperty('--text-color', theme.text);
-            root.style.setProperty('--header-bg', theme.header);
-            root.style.setProperty('--panel-bg', theme.panel);
-            localStorage.setItem("selectedTheme", themeName);
-            updateAllCells();
-        }
-
-        function toggleMode() {
-            isEditMode = !isEditMode;
-            document.querySelectorAll('select').forEach(el => el.disabled = !isEditMode);
-            document.getElementById('modeBtn').innerText = isEditMode ? "보기 모드 전환" : "편집 모드 전환";
-        }
-
-        const subjectList = ["없음", "창체", "영어", "문학", "한국사", "체육", "미술", "자율학습", "동아리", "응용 프로그래밍", "시스템 프로그래밍", "자료 구조"];
+        const subjectList = ["없음", "창체", "영어", "문학", "한국사", "체육", "미술",
+            "자율학습", "동아리", "응용 프로그래밍", "시스템 프로그래밍", "자료 구조"];
         const days = ['월', '화', '수', '목', '금'];
-        
+
+        /* ===== 셀 생성 (1~7교시 x 월~금) — 항상 수정 가능 ===== */
         const container = document.getElementById('timetable');
         for (let i = 1; i <= 7; i++) {
-            container.innerHTML += `<div class="cell header">${i}교시</div>`;
+            container.innerHTML += `<div class="cell header perio">${i}</div>`;
             days.forEach(day => {
                 const cellId = `cell-${day}-${i}`;
                 container.innerHTML += `<div class="cell" id="container-${cellId}">
-                    <select id="${cellId}" onchange="updateCell('${cellId}')">
+                    <select id="${cellId}" onchange="onUserEdit('${cellId}')">
                     ${subjectList.map(s => `<option value="${s}">${s}</option>`).join('')}
                 </select></div>`;
             });
         }
 
-        function updateCell(id) {
+        /* ===== 셀 표시 (검정/회색 단색) ===== */
+        function paintCell(id) {
             const select = document.getElementById(id);
-            const containerDiv = document.getElementById(`container-${id}`);
-            const val = select.value;
-            const theme = themes[document.getElementById("themeSelect").value];
-            const idx = subjectList.indexOf(val) % theme.sub.length;
-            containerDiv.style.backgroundColor = (val === "없음") ? "transparent" : theme.sub[idx];
-            localStorage.setItem(id, val);
+            const box = document.getElementById(`container-${id}`);
+            if (!select || !box) return;
+            box.style.backgroundColor =
+                (select.value === "없음" || select.value === "") ? "transparent" : "var(--fill)";
+        }
+        // 사용자가 직접 수정한 칸만 localStorage에 저장 → 자동 로드 위에 덮어씀
+        function onUserEdit(id) {
+            localStorage.setItem('edit-' + id, document.getElementById(id).value);
+            paintCell(id);
         }
 
-        function updateAllCells() {
-            document.querySelectorAll('select').forEach(el => updateCell(el.id));
+        /* ===== 오늘 요일 강조 ===== */
+        function highlightToday() {
+            const map = {1:'월',2:'화',3:'수',4:'목',5:'금'};
+            const d = map[new Date().getDay()];
+            const head = document.getElementById('head-' + d);
+            if (head) head.classList.add('today-highlight');
         }
 
+        /* ===== NEIS 시간표 자동 불러오기 ===== */
+        function fmt(d){
+            return d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+        }
+        function weekRange(offset){
+            const now = new Date();
+            const day = now.getDay();
+            const diffToMon = (day === 0 ? -6 : 1 - day);
+            const monday = new Date(now);
+            monday.setDate(now.getDate() + diffToMon + offset*7);
+            const friday = new Date(monday);
+            friday.setDate(monday.getDate() + 4);
+            return { from: fmt(monday), to: fmt(friday) };
+        }
+        async function resolveSchool(){
+            const url = 'https://open.neis.go.kr/hub/schoolInfo?Type=json&pSize=20&SCHUL_NM=' +
+                encodeURIComponent(SCHOOL_NAME);
+            const j = await (await fetch(url)).json();
+            const rows = j.schoolInfo[1].row;
+            const exact = rows.find(r => r.SCHUL_NM === SCHOOL_NAME) || rows[0];
+            return { atpt: exact.ATPT_OFCDC_SC_CODE, code: exact.SD_SCHUL_CODE };
+        }
+        async function fetchWeek(atpt, code, range){
+            const url = 'https://open.neis.go.kr/hub/hisTimetable?Type=json&pSize=500' +
+                '&ATPT_OFCDC_SC_CODE=' + atpt + '&SD_SCHUL_CODE=' + code +
+                '&AY=' + AY + '&SEM=' + SEM + '&GRADE=' + GRADE + '&CLASS_NM=' + CLASS_NM +
+                '&TI_FROM_YMD=' + range.from + '&TI_TO_YMD=' + range.to;
+            const j = await (await fetch(url)).json();
+            return j.hisTimetable ? j.hisTimetable[1].row : null;
+        }
+        function ensureOption(sel, value){
+            if (![...sel.options].some(o => o.value === value)) {
+                const o = document.createElement('option');
+                o.value = value; o.textContent = value; sel.appendChild(o);
+            }
+        }
+        function applyTimetable(rows){
+            const map = {1:'월',2:'화',3:'수',4:'목',5:'금'};
+            rows.forEach(r => {
+                if (!r.ITRT_CNTNT) return;
+                const y = r.ALL_TI_YMD;
+                const dObj = new Date(+y.slice(0,4), +y.slice(4,6)-1, +y.slice(6,8));
+                const dy = map[dObj.getDay()];
+                const perio = Number(r.PERIO);
+                if (!dy || !perio || perio > 7) return;
+                const sel = document.getElementById(`cell-${dy}-${perio}`);
+                if (!sel) return;
+                const subject = r.ITRT_CNTNT.trim();
+                ensureOption(sel, subject);
+                sel.value = subject;
+            });
+        }
+        async function autoLoad(){
+            const status = document.getElementById('ttStatus');
+            status.textContent = '시간표 불러오는 중...';
+            try {
+                const { atpt, code } = await resolveSchool();
+                let rows = await fetchWeek(atpt, code, weekRange(0));
+                if (!rows || !rows.length) rows = await fetchWeek(atpt, code, weekRange(-1));
+                if (rows && rows.length) {
+                    applyTimetable(rows);
+                    status.textContent = '칸을 눌러 자유롭게 수정할 수 있어요.';
+                } else {
+                    status.textContent = '등록된 시간표가 없어요. 칸을 눌러 직접 입력하세요.';
+                }
+            } catch (e) {
+                console.error('시간표 로딩 오류:', e);
+                status.textContent = '시간표를 불러오지 못했어요. 칸을 눌러 직접 입력하세요.';
+            }
+            applyUserEdits();   // 자동 로드 위에 내가 고친 내용 덮어쓰기
+            paintAll();
+        }
+        function applyUserEdits(){
+            document.querySelectorAll('#timetable select').forEach(sel => {
+                const saved = localStorage.getItem('edit-' + sel.id);
+                if (saved) { ensureOption(sel, saved); sel.value = saved; }
+            });
+        }
+        function paintAll(){
+            document.querySelectorAll('#timetable select').forEach(sel => paintCell(sel.id));
+        }
+
+        /* ===== D-Day ===== */
         function setDDay() {
             const date = prompt("시험 날짜를 입력하세요 (YYYY-MM-DD)", localStorage.getItem("ddayDate") || "");
-            if(date) {
-                localStorage.setItem("ddayDate", date);
-                renderDDay();
-            }
+            if (date) { localStorage.setItem("ddayDate", date); renderDDay(); }
         }
         function renderDDay() {
             const dday = localStorage.getItem("ddayDate");
-            if(!dday) return;
+            if (!dday) return;
             const diff = Math.ceil((new Date(dday) - new Date()) / (1000*60*60*24));
             document.getElementById('dday-display').innerText = `시험까지 D-${diff}`;
         }
 
+        /* ===== 공유 / 초기화 / 이미지 저장 ===== */
         function shareLink() {
             const data = {};
-            document.querySelectorAll('select').forEach(el => data[el.id] = el.value);
-            const compressed = btoa(JSON.stringify(data));
+            document.querySelectorAll('#timetable select').forEach(el => data[el.id] = el.value);
+            const compressed = btoa(encodeURIComponent(JSON.stringify(data)));
             const url = window.location.origin + window.location.pathname + "#" + compressed;
             navigator.clipboard.writeText(url).then(() => alert("공유 링크가 복사되었습니다!"));
         }
-
-        window.onload = () => {
-            if(window.location.hash) {
-                try {
-                    const data = JSON.parse(atob(window.location.hash.substring(1)));
-                    Object.keys(data).forEach(id => { const el = document.getElementById(id); if(el) el.value = data[id]; });
-                } catch(e) { console.log("링크 데이터 오류"); }
+        function resetTimetable() {
+            if (confirm("직접 수정한 내용을 모두 지우고 다시 불러올까요?")) {
+                localStorage.clear(); location.reload();
             }
-            document.getElementById("themeSelect").value = localStorage.getItem("selectedTheme") || "warm";
-            changeTheme();
-            renderDDay();
-            document.querySelectorAll('select').forEach(el => {
-                const saved = localStorage.getItem(el.id);
-                if(saved) el.value = saved;
-                updateCell(el.id);
+        }
+        function downloadImage() {
+            html2canvas(document.getElementById("timetable")).then(c => {
+                const a = document.createElement("a");
+                a.href = c.toDataURL(); a.download = "나만의_시간표.png"; a.click();
             });
+        }
+
+        /* ===== 초기 실행 ===== */
+        window.onload = () => {
+            highlightToday();
+            renderDDay();
+
+            // 공유 링크로 들어온 경우: 링크 데이터 우선, 자동 로드 생략
+            if (window.location.hash) {
+                try {
+                    const data = JSON.parse(decodeURIComponent(atob(window.location.hash.substring(1))));
+                    Object.keys(data).forEach(id => {
+                        const el = document.getElementById(id);
+                        if (el) { ensureOption(el, data[id]); el.value = data[id]; }
+                    });
+                    paintAll();
+                    document.getElementById('ttStatus').textContent = '공유된 시간표를 불러왔어요.';
+                    return;
+                } catch (e) { console.log("링크 데이터 오류"); }
+            }
+
+            // 항상 NEIS에서 자동으로 불러오고, 내가 고친 칸은 그 위에 유지
+            autoLoad();
         };
-        function resetTimetable() { if(confirm("초기화?")) { localStorage.clear(); location.reload(); } }
-        function downloadImage() { html2canvas(document.getElementById("timetable")).then(c => { const a = document.createElement("a"); a.href = c.toDataURL(); a.download="나만의_시간표.png"; a.click(); }); }
     </script>
 </body>
 </html>
